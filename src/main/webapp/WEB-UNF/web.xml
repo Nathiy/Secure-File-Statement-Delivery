@@ -1,0 +1,32 @@
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         version="3.1">
+
+    <listener>
+        <listener-class>com.securestatements.util.DatabaseInitializer</listener-class>
+    </listener>
+
+    <servlet>
+        <servlet-name>UploadServlet</servlet-name>
+        <servlet-class>
+            com.securestatements.servlet.UploadStatementServlet
+        </servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>UploadServlet</servlet-name>
+        <url-pattern>/upload</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>DownloadServlet</servlet-name>
+        <servlet-class>
+            com.securestatements.servlet.DownloadStatementServlet
+        </servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>DownloadServlet</servlet-name>
+        <url-pattern>/download</url-pattern>
+    </servlet-mapping>
+
+</web-app>
