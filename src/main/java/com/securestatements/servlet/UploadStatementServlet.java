@@ -16,7 +16,7 @@ public class UploadStatementServlet implements Servlet {
     private ServletConfig config;
 
     @Override
-    public void init(ServletConfig config) throws ServletException {
+    public void init(ServletConfig config) {
         this.config = config;
         LOGGER.info("UploadStatementServlet initialized");
     }
@@ -27,7 +27,7 @@ public class UploadStatementServlet implements Servlet {
     }
 
     @Override
-    public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
+    public void service(ServletRequest req, ServletResponse res) throws IOException {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
@@ -40,29 +40,62 @@ public class UploadStatementServlet implements Servlet {
         doPost(request, response);
     }
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Connection conn = null;
         PreparedStatement ps = null;
 
         try {
-            int customerId = Integer.parseInt(request.getParameter("customerId"));
+            // Get form parameters
+            String customerIdStr = request.getParameter("customerId");
+            String customerName = request.getParameter("customerName");
 
-            // Note: Since we no longer extend HttpServlet, multipart handling needs manual implementation
-            // For demonstration, using regular parameters (not suitable for real file uploads)
-            String fileName = request.getParameter("fileName");
-            String fileData = request.getParameter("fileData"); // Would need base64 decoding
+            LOGGER.info("Received upload request - Customer ID: " + customerIdStr + ", Name: " + customerName);
 
-            if (fileName == null || fileName.isEmpty()) {
+            if (customerIdStr == null || customerIdStr.isEmpty()) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().println("File name is empty");
+                response.getWriter().println("Customer ID is required");
                 return;
             }
 
-            // Simplified file handling - in production, implement proper multipart parsing
-            byte[] data = fileData != null ? fileData.getBytes() : new byte[0];
+            if (customerName == null || customerName.isEmpty()) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().println("Customer Name is required");
+                return;
+            }
 
-            String path = FileService.saveFile(fileName, data);
+            int customerId = Integer.parseInt(customerIdStr);
 
+            // Handle file upload
+            String fileName = null;
+            byte[] fileData = null;
+
+            try {
+                // Try to get file part (if using FormData)
+                Part filePart = request.getPart("file");
+                if (filePart != null && filePart.getSize() > 0) {
+                    fileName = filePart.getSubmittedFileName();
+                    fileData = readInputStreamToBytes(filePart.getInputStream());
+                    LOGGER.info("Received file: " + fileName + ", Size: " + fileData.length + " bytes");
+                }
+            } catch (Exception e) {
+                // Fall back to alternative file handling
+                LOGGER.info("Could not read file part, trying alternative method: " + e.getMessage());
+                fileName = request.getParameter("fileName");
+                String fileDataStr = request.getParameter("fileData");
+                fileData = (fileDataStr != null) ? fileDataStr.getBytes() : new byte[0];
+            }
+
+            if (fileName == null || fileName.isEmpty() || fileData == null || fileData.length == 0) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().println("File is required");
+                return;
+            }
+
+            // Save file
+            String path = FileService.saveFile(fileName, fileData);
+            LOGGER.info("File saved to: " + path);
+
+            // Save to database
             conn = DBConnection.getConnection();
             if (conn == null) {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -70,16 +103,16 @@ public class UploadStatementServlet implements Servlet {
                 return;
             }
 
-            String sql = "INSERT INTO statements(customer_id,file_path) VALUES(?,?)";
+            String sql = "INSERT INTO statements(customer_id, file_name, file_path) VALUES(?, ?, ?)";
             ps = conn.prepareStatement(sql);
-
             ps.setInt(1, customerId);
-            ps.setString(2, path);
-
+            ps.setString(2, fileName);
+            ps.setString(3, path);
             ps.executeUpdate();
 
             response.setStatus(HttpServletResponse.SC_OK);
-            response.getWriter().println("Upload successful");
+            response.setContentType("application/json");
+            response.getWriter().println("{\"success\": true, \"message\": \"Upload successful\"}");
             LOGGER.info("File uploaded successfully for customer: " + customerId);
 
         } catch (NumberFormatException e) {
@@ -100,6 +133,16 @@ public class UploadStatementServlet implements Servlet {
         }
     }
 
+    private byte[] readInputStreamToBytes(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int nRead;
+        byte[] data = new byte[16384];
+        while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+        return buffer.toByteArray();
+    }
+
     @Override
     public String getServletInfo() {
         return "UploadStatementServlet - Handles secure file uploads";
@@ -108,9 +151,5 @@ public class UploadStatementServlet implements Servlet {
     @Override
     public void destroy() {
         LOGGER.info("UploadStatementServlet destroyed");
-    }
-
-    private ServletContext getServletContext() {
-        return config.getServletContext();
     }
 }

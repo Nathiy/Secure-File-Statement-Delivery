@@ -3,15 +3,15 @@ package com.securestatements.model;
 import java.sql.Timestamp;
 
 /**
- * Customer Class - Represents a customer user in the system
+ * Admin Class - Represents an administrator user in the system
  *
- * Customers have the ability to:
- * - Login with username and password
- * - View their available statements
- * - Download statements using secure tokens
- * - Access their account information
+ * Administrators have the ability to:
+ * - Upload statements for customers
+ * - Generate download links
+ * - Manage user accounts
+ * - View audit logs
  */
-public class Customer implements User {
+public class Admin implements User {
 
     private int id;
     private String username;
@@ -29,13 +29,13 @@ public class Customer implements User {
     /**
      * Default constructor
      */
-    public Customer() {
+    public Admin() {
     }
 
     /**
      * Constructor with basic info
      */
-    public Customer(int id, String username, String email, String fullName) {
+    public Admin(int id, String username, String email, String fullName) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -46,9 +46,9 @@ public class Customer implements User {
     /**
      * Constructor with full details
      */
-    public Customer(int id, String username, String email, String fullName, boolean isActive,
-                    Timestamp createdAt, Timestamp lastLogin, String lastLoginIp,
-                    int loginAttempts, Timestamp lockedUntil) {
+    public Admin(int id, String username, String email, String fullName, boolean isActive,
+                 Timestamp createdAt, Timestamp lastLogin, String lastLoginIp,
+                 int loginAttempts, Timestamp lockedUntil) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -115,7 +115,7 @@ public class Customer implements User {
 
     @Override
     public String getUserType() {
-        return "customer";
+        return "admin";
     }
 
     @Override
@@ -182,7 +182,7 @@ public class Customer implements User {
 
     @Override
     public String toString() {
-        return "Customer{" +
+        return "Admin{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
@@ -201,9 +201,9 @@ public class Customer implements User {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Customer customer = (Customer) o;
-        return id == customer.id &&
-                username.equals(customer.username);
+        Admin admin = (Admin) o;
+        return id == admin.id &&
+                username.equals(admin.username);
     }
 
     @Override
@@ -211,3 +211,4 @@ public class Customer implements User {
         return java.util.Objects.hash(id, username);
     }
 }
+

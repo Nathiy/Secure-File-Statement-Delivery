@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Statement Upload</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-header h2 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .page-header p {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .upload-section h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .file-input-label:hover {
+            background: #eef0ff;
+            border-color: #764ba2;
+        }
+
+        .file-input-label.dragover {
+            background: #e8ecff;
+            border-color: #764ba2;
+        }
+
+        .file-name {
+            margin-top: 10px;
+            color: #27ae60;
+            font-size: 14px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .statements-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .statements-section h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #ddd;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+
+        .status-pending {
+            background: #ffeaa7;
+            color: #f39c12;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+
+        .message.error {
+            background: #fadbd8;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .table-wrapper {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>📊 Admin Dashboard</h1>
+        <div class="navbar-actions">
+            <div class="user-info">
+                <div class="user-avatar">A</div>
+                <span id="adminUsername">Admin</span>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>Upload Statements</h2>
+            <p>Upload and manage customer statements securely</p>
+        </div>
+
+        <div id="successMessage" class="message success"></div>
+        <div id="errorMessage" class="message error"></div>
+
+        <div class="upload-section">
+            <h3>📁 Upload New Statement</h3>
+            <form id="uploadForm" onsubmit="handleUpload(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customerId">Customer ID</label>
+                        <input type="number" id="customerId" name="customerId" required placeholder="Enter customer ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerName">Customer Name</label>
+                        <input type="text" id="customerName" name="customerName" required placeholder="Enter customer name">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fileInput">Select File</label>
+                    <div class="file-input-wrapper">
+                        <label for="fileInput" class="file-input-label" id="fileLabel">
+                            📄 Click to select or drag and drop a file
+                        </label>
+                        <input type="file" id="fileInput" name="file" accept=".pdf,.doc,.docx,.txt" required>
+                        <div class="file-name" id="fileName"></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="uploadBtn">Upload Statement</button>
+            </form>
+        </div>
+
+        <div class="statements-section">
+            <h3>📋 Uploaded Statements</h3>
+            <div id="statementsContainer">
+                <div class="empty-state">
+                    <p>No statements uploaded yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load statements on page load
+        window.addEventListener('load', loadStatements);
+
+        // File drag and drop
+        const fileLabel = document.getElementById('fileLabel');
+        const fileInput = document.getElementById('fileInput');
+
+        fileLabel.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileLabel.classList.add('dragover');
+        });
+
+        fileLabel.addEventListener('dragleave', () => {
+            fileLabel.classList.remove('dragover');
+        });
+
+        fileLabel.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileLabel.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateFileName();
+            }
+        });
+
+        fileInput.addEventListener('change', updateFileName);
+
+        function updateFileName() {
+            const fileName = fileInput.files[0]?.name;
+            document.getElementById('fileName').textContent = fileName ? `✓ ${fileName} selected` : '';
+        }
+
+        function handleUpload(event) {
+            event.preventDefault();
+
+            const customerId = document.getElementById('customerId').value;
+            const customerName = document.getElementById('customerName').value;
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!customerId || !customerName || !file) {
+                showError('Please fill all fields and select a file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('customerId', customerId);
+            formData.append('customerName', customerName);
+            formData.append('file', file);
+
+            document.getElementById('uploadBtn').disabled = true;
+
+            fetch('/admin/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    showSuccess('Statement uploaded successfully!');
+                    document.getElementById('uploadForm').reset();
+                    document.getElementById('fileName').textContent = '';
+                    loadStatements();
+                } else {
+                    return response.text().then(text => {
+                        throw new Error(text);
+                    });
+                }
+            })
+            .catch(error => {
+                showError(error.message || 'Upload failed');
+            })
+            .finally(() => {
+                document.getElementById('uploadBtn').disabled = false;
+            });
+        }
+
+        function loadStatements() {
+            fetch('/admin/statements')
+            .then(response => response.json())
+            .then(data => {
+                displayStatements(data);
+            })
+            .catch(error => {
+                console.error('Error loading statements:', error);
+            });
+        }
+
+        function displayStatements(statements) {
+            const container = document.getElementById('statementsContainer');
+
+            if (!statements || statements.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No statements uploaded yet</p></div>';
+                return;
+            }
+
+            const tableHTML = `
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Customer Name</th>
+                                <th>File Name</th>
+                                <th>Upload Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${statements.map(stmt => `
+                                <tr>
+                                    <td>${stmt.id}</td>
+                                    <td>${stmt.customerName}</td>
+                                    <td>${stmt.fileName}</td>
+                                    <td>${new Date(stmt.uploadDate).toLocaleDateString()}</td>
+                                    <td><span class="status-badge status-success">✓ Uploaded</span></td>
+                                    <td>
+                                        <button onclick="generateDownloadLink(${stmt.id})" style="background: #667eea; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                            Generate Link
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = tableHTML;
+        }
+
+        function generateDownloadLink(statementId) {
+            fetch(`/admin/generate-link/${statementId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const downloadUrl = `${window.location.origin}/download.html?token=${data.token}`;
+                showSuccess(`Download link generated! Share this link with the customer:<br><code>${downloadUrl}</code>`);
+            })
+            .catch(error => {
+                showError('Failed to generate download link');
+            });
+        }
+
+        function showSuccess(message) {
+            const msgEl = document.getElementById('successMessage');
+            msgEl.innerHTML = message;
+            msgEl.classList.add('show');
+            document.getElementById('errorMessage').classList.remove('show');
+            setTimeout(() => msgEl.classList.remove('show'), 5000);
+        }
+
+        function showError(message) {
+            const msgEl = document.getElementById('errorMessage');
+            msgEl.textContent = message;
+            msgEl.classList.add('show');
+            document.getElementById('successMessage').classList.remove('show');
+            setTimeout(() => msgEl.classList.remove('show'), 5000);
+        }
+
+        function logout() {
+            fetch('/logout', { method: 'POST' })
+            .then(() => {
+                window.location.href = '/login.html';
+            });
+        }
+    </script>
+</body>
+</html>
+

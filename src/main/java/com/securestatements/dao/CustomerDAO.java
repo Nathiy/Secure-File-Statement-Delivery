@@ -20,7 +20,7 @@ public class CustomerDAO {
 
             PreparedStatement ps = conn.prepareStatement(sql);
 
-            ps.setString(1, customer.getName());
+            ps.setString(1, customer.getFullName());
             ps.setString(2, customer.getEmail());
 
             ps.executeUpdate();
@@ -52,7 +52,7 @@ public class CustomerDAO {
                 customer = new Customer();
 
                 customer.setId(rs.getInt("id"));
-                customer.setName(rs.getString("name"));
+                customer.setFullName(rs.getString("name"));
                 customer.setEmail(rs.getString("email"));
             }
 
@@ -83,7 +83,7 @@ public class CustomerDAO {
                 Customer customer = new Customer();
 
                 customer.setId(rs.getInt("id"));
-                customer.setName(rs.getString("name"));
+                customer.setFullName(rs.getString("name"));
                 customer.setEmail(rs.getString("email"));
 
                 customers.add(customer);

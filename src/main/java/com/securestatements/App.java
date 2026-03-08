@@ -6,6 +6,11 @@ import com.securestatements.dao.TokenDAO;
 import com.securestatements.util.DBConnection;
 import com.securestatements.servlet.UploadStatementServlet;
 import com.securestatements.servlet.DownloadStatementServlet;
+import com.securestatements.servlet.LoginServlet;
+import com.securestatements.servlet.LogoutServlet;
+import com.securestatements.servlet.AdminStatementServlet;
+import com.securestatements.servlet.CustomerStatementServlet;
+import com.securestatements.servlet.VerifyTokenServlet;
 
 import java.io.File;
 import java.util.logging.Level;
@@ -14,6 +19,7 @@ import java.util.logging.Logger;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.servlet.DefaultServlet;
 
 /**
  * App.java - Main application entry point and service initializer
@@ -148,21 +154,57 @@ public class App {
             // Create servlet context handler
             ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
             context.setContextPath("/");
+            context.setResourceBase("src/main/webapp");
 
-            // Add servlets
+            // Add custom application servlets (POST endpoints)
             ServletHolder uploadHolder = new ServletHolder();
             uploadHolder.setClassName(UploadStatementServlet.class.getName());
             uploadHolder.setName("upload");
             context.addServlet(uploadHolder, "/upload");
+            context.addServlet(uploadHolder, "/admin/upload");  // Admin route
 
             ServletHolder downloadHolder = new ServletHolder();
             downloadHolder.setClassName(DownloadStatementServlet.class.getName());
             downloadHolder.setName("download");
             context.addServlet(downloadHolder, "/download");
 
-            // Serve static files from webapp directory
-            context.setResourceBase("src/main/webapp");
-            context.setWelcomeFiles(new String[]{"index.jsp"});
+            ServletHolder loginHolder = new ServletHolder();
+            loginHolder.setClassName(LoginServlet.class.getName());
+            loginHolder.setName("login");
+            context.addServlet(loginHolder, "/login");
+
+            ServletHolder logoutHolder = new ServletHolder();
+            logoutHolder.setClassName(LogoutServlet.class.getName());
+            logoutHolder.setName("logout");
+            context.addServlet(logoutHolder, "/logout");
+
+            // Add admin statement servlet
+            ServletHolder adminStmtHolder = new ServletHolder();
+            adminStmtHolder.setClassName(AdminStatementServlet.class.getName());
+            adminStmtHolder.setName("adminStatements");
+            context.addServlet(adminStmtHolder, "/admin/statements");
+            context.addServlet(adminStmtHolder, "/admin/generate-link/*");
+
+            // Add customer statement servlet
+            ServletHolder customerStmtHolder = new ServletHolder();
+            customerStmtHolder.setClassName(CustomerStatementServlet.class.getName());
+            customerStmtHolder.setName("customerStatements");
+            context.addServlet(customerStmtHolder, "/customer/statements");
+
+            // Add token verification servlet
+            ServletHolder verifyTokenHolder = new ServletHolder();
+            verifyTokenHolder.setClassName(VerifyTokenServlet.class.getName());
+            verifyTokenHolder.setName("verifyToken");
+            context.addServlet(verifyTokenHolder, "/verify-token/*");
+
+            // Add default servlet for static files (HTML, CSS, JS, images)
+            ServletHolder defaultHolder = new ServletHolder("default", DefaultServlet.class);
+            defaultHolder.setInitParameter("resourceBase", "src/main/webapp");
+            defaultHolder.setInitParameter("dirAllowed", "false");
+            context.addServlet(defaultHolder, "/");
+
+            // Set welcome files (files served when accessing a directory)
+            context.setWelcomeFiles(new String[]{"login.html", "index.html"});
 
             server.setHandler(context);
 
@@ -171,11 +213,15 @@ public class App {
             LOGGER.info("✓ Jetty server started successfully on http://localhost:8080");
             LOGGER.info("===========================================");
             LOGGER.info("Application is now running!");
-            LOGGER.info("  • Upload endpoint: http://localhost:8080/upload");
-            LOGGER.info("  • Download endpoint: http://localhost:8080/download");
-            LOGGER.info("  • Web interface: http://localhost:8080/index.jsp");
+            LOGGER.info("  • Login page: http://localhost:8080/login.html");
+            LOGGER.info("  • Admin Dashboard: http://localhost:8080/admin-dashboard.html");
+            LOGGER.info("  • Customer Dashboard: http://localhost:8080/customer-dashboard.html");
+            LOGGER.info("  • Download page: http://localhost:8080/download.html");
             LOGGER.info("===========================================");
             LOGGER.info("Press Ctrl+C to stop the server");
+
+            // Open default browser with login page
+            openBrowserToLoginPage();
 
             // Wait for the server to be stopped
             server.join();
@@ -234,5 +280,34 @@ public class App {
         LOGGER.info("Shutting down application...");
         LOGGER.info("✓ All services shut down successfully");
     }
-}
 
+    /**
+     * Opens the default web browser to the login page
+     * This method attempts to open the application in the system's default browser
+     */
+    private static void openBrowserToLoginPage() {
+        try {
+            String url = "http://localhost:8080/login.html";
+            String osName = System.getProperty("os.name").toLowerCase();
+
+            if (osName.contains("win")) {
+                // Windows
+                Runtime.getRuntime().exec("cmd /c start " + url);
+                LOGGER.info("Opening browser on Windows...");
+            } else if (osName.contains("mac")) {
+                // macOS
+                Runtime.getRuntime().exec(new String[]{"open", url});
+                LOGGER.info("Opening browser on macOS...");
+            } else if (osName.contains("linux")) {
+                // Linux
+                Runtime.getRuntime().exec(new String[]{"xdg-open", url});
+                LOGGER.info("Opening browser on Linux...");
+            } else {
+                // Fallback
+                LOGGER.info("Unable to auto-open browser. Please visit: " + url);
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Could not open browser automatically. Please visit: http://localhost:8080/login.html", e);
+        }
+    }
+}

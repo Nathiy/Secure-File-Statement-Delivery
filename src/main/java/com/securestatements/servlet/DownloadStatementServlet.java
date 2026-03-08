@@ -38,7 +38,7 @@ public class DownloadStatementServlet implements Servlet {
         doGet(request, response);
     }
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             String token = request.getParameter("token");
 
@@ -55,9 +55,9 @@ public class DownloadStatementServlet implements Servlet {
                 return;
             }
 
-            String sql = "SELECT s.file_path,t.expiry_time,t.used " +
+            String sql = "SELECT s.id, s.file_path, s.file_name, t.id as token_id, t.expiry_time, t.used " +
                         "FROM tokens t JOIN statements s " +
-                        "ON t.statement_id=s.id WHERE token=?";
+                        "ON t.statement_id = s.id WHERE t.token = ?";
 
             PreparedStatement ps = null;
             ResultSet rs = null;
@@ -70,21 +70,42 @@ public class DownloadStatementServlet implements Servlet {
                 if (rs.next()) {
                     long expiry = rs.getLong("expiry_time");
                     boolean used = rs.getBoolean("used");
+                    int tokenId = rs.getInt("token_id");
+                    int statementId = rs.getInt("id");
 
-                    if (System.currentTimeMillis() > expiry || used) {
+                    // Check if token is expired
+                    if (System.currentTimeMillis() > expiry) {
                         response.setStatus(HttpServletResponse.SC_GONE);
                         response.getWriter().println("Link expired");
+                        LOGGER.info("Download failed: Token expired - " + token);
+                        return;
+                    }
+
+                    // Check if token was already used
+                    if (used) {
+                        response.setStatus(HttpServletResponse.SC_GONE);
+                        response.getWriter().println("Link has already been used");
+                        LOGGER.info("Download failed: Token already used - " + token);
                         return;
                     }
 
                     String path = rs.getString("file_path");
+                    String fileName = rs.getString("file_name");
                     File file = new File(path);
 
                     if (!file.exists()) {
                         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                         response.getWriter().println("File not found");
+                        LOGGER.info("Download failed: File not found - " + path);
                         return;
                     }
+
+                    // Mark token as used
+                    String updateSql = "UPDATE tokens SET used = TRUE, used_at = NOW() WHERE id = ?";
+                    PreparedStatement updatePs = conn.prepareStatement(updateSql);
+                    updatePs.setInt(1, tokenId);
+                    updatePs.executeUpdate();
+                    updatePs.close();
 
                     // Set content type based on file extension
                     String contentType = getServletContext().getMimeType(file.getName());
@@ -94,7 +115,7 @@ public class DownloadStatementServlet implements Servlet {
                     response.setContentType(contentType);
 
                     // Set content disposition for download
-                    response.setHeader("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"");
+                    response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
                     response.setContentLengthLong(file.length());
 
                     FileInputStream in = new FileInputStream(file);
@@ -109,11 +130,12 @@ public class DownloadStatementServlet implements Servlet {
                     in.close();
                     out.flush();
 
-                    LOGGER.info("File downloaded successfully: " + file.getName());
+                    LOGGER.info("File downloaded successfully: " + fileName + " (Token: " + token + ")");
 
                 } else {
                     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                     response.getWriter().println("Invalid token or file not found");
+                    LOGGER.info("Download failed: Invalid token - " + token);
                 }
 
             } finally {
