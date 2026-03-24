@@ -1,289 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download Statement</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            padding: 40px;
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-        }
-
-        .icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 28px;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-
-        p {
-            color: #7f8c8d;
-            margin-bottom: 30px;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-        .info-box {
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin-bottom: 20px;
-            text-align: left;
-            border-radius: 6px;
-        }
-
-        .info-box strong {
-            color: #2c3e50;
-        }
-
-        .info-box span {
-            color: #667eea;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-secondary {
-            background: #ecf0f1;
-            color: #7f8c8d;
-        }
-
-        .btn-secondary:hover {
-            background: #bdc3c7;
-        }
-
-        .status {
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .status.show {
-            display: block;
-        }
-
-        .status.success {
-            background: #d5f4e6;
-            color: #27ae60;
-            border: 1px solid #27ae60;
-        }
-
-        .status.error {
-            background: #fadbd8;
-            color: #e74c3c;
-            border: 1px solid #e74c3c;
-        }
-
-        .status.warning {
-            background: #ffeaa7;
-            color: #f39c12;
-            border: 1px solid #f39c12;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-        }
-
-        .loading.show {
-            display: block;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .back-link {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 14px;
-            margin-top: 20px;
-            display: inline-block;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="icon">📥</div>
-        <h1>Download Your Statement</h1>
 
-        <div id="status" class="status"></div>
+<h2>Secure Statement Download</h2>
 
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <p>Verifying your download link...</p>
-        </div>
+<p id="status">Validating link...</p>
 
-        <div id="content" style="display: none;">
-            <p>Your document is ready to download. Click the button below to start.</p>
+<button id="downloadBtn" style="display:none;">Download Statement</button>
 
-            <div id="infoBox" class="info-box">
-                <div>
-                    <strong>Document ID:</strong> <span id="docId">-</span>
-                </div>
-                <div style="margin-top: 10px;">
-                    <strong>Expires:</strong> <span id="expiry">-</span>
-                </div>
-            </div>
+<script>
 
-            <div class="action-buttons">
-                <button class="btn btn-primary" onclick="performDownload()">⬇️ Download Now</button>
-                <button class="btn btn-secondary" onclick="goBack()">← Go Back</button>
-            </div>
-        </div>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
 
-        <div id="expiredContent" style="display: none;">
-            <p style="color: #e74c3c; font-weight: 600;">This download link has expired or is invalid.</p>
-            <p>Please contact your administrator to request a new download link.</p>
-            <button class="btn btn-secondary" onclick="goBack()" style="margin-top: 20px;">← Go Back</button>
-        </div>
+    const status = document.getElementById("status");
+    const btn = document.getElementById("downloadBtn");
 
-        <a href="/" class="back-link">← Back to Home</a>
-    </div>
+    if (!token) {
+        status.textContent = "Invalid link.";
+    } else {
+        status.textContent = "Link ready. Click download.";
+        btn.style.display = "block";
+    }
 
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
+    btn.onclick = () => {
+        window.location = "/download?token=" + token;
+    };
 
-        window.addEventListener('load', verifyToken);
+</script>
 
-        function verifyToken() {
-            if (!token) {
-                showStatus('No download link provided', 'error');
-                showExpired();
-                return;
-            }
-
-            document.getElementById('loading').classList.add('show');
-
-            fetch(`/verify-token/${token}`)
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                } else if (response.status === 410 || response.status === 404) {
-                    throw new Error('expired');
-                } else {
-                    throw new Error('Invalid token');
-                }
-            })
-            .then(data => {
-                document.getElementById('loading').classList.remove('show');
-                showContent(data);
-            })
-            .catch(error => {
-                document.getElementById('loading').classList.remove('show');
-                if (error.message === 'expired') {
-                    showExpired();
-                } else {
-                    showStatus('Unable to verify download link', 'error');
-                    showExpired();
-                }
-            });
-        }
-
-        function showContent(data) {
-            document.getElementById('content').style.display = 'block';
-            document.getElementById('docId').textContent = `#${data.statementId || '-'}`;
-            document.getElementById('expiry').textContent = new Date(data.expiryTime).toLocaleDateString();
-        }
-
-        function showExpired() {
-            document.getElementById('expiredContent').style.display = 'block';
-        }
-
-        function performDownload() {
-            if (!token) {
-                showStatus('No download link available', 'error');
-                return;
-            }
-
-            // Create an invisible link and click it to trigger download
-            const a = document.createElement('a');
-            a.href = `/download?token=${token}`;
-            a.download = true;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-
-            showStatus('Download started! If it doesn\'t begin, please try again.', 'success');
-        }
-
-        function showStatus(message, type) {
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = message;
-            statusEl.className = `status show ${type}`;
-        }
-
-        function goBack() {
-            window.history.back();
-        }
-    </script>
 </body>
 </html>
-

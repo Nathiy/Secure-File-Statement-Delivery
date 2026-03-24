@@ -1,120 +1,61 @@
+
 package com.securestatements.dao;
 
-import com.securestatements.model.Statement;
-import com.securestatements.util.DBConnection;
-
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class StatementDAO {
 
-    // Save statement
-    public void addStatement(Statement statement) {
+    private static final String DB = "jdbc:sqlite:statements.db";
 
-        try {
+    static {
+        try (Connection conn = DriverManager.getConnection(DB)) {
 
-            Connection conn = DBConnection.getConnection();
+            conn.createStatement().execute(
+                "CREATE TABLE IF NOT EXISTS statements (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "customer_id INTEGER," +
+                "customer_name TEXT," +
+                "file_path TEXT)"
+            );
 
-            String sql = "INSERT INTO statements(customer_id, file_path) VALUES (?, ?)";
-
-            PreparedStatement ps = conn.prepareStatement(sql);
-
-            ps.setInt(1, statement.getCustomerId());
-            ps.setString(2, statement.getFilePath());
-
-            ps.executeUpdate();
-
-        } catch (Exception e) {
+        } catch(Exception e){
             e.printStackTrace();
         }
     }
 
-    // Get statement by ID
-    public Statement getStatementById(int id) {
+    public static int save(int customerId, String customerName, String filePath) throws Exception {
 
-        Statement statement = null;
+        Connection conn = DriverManager.getConnection(DB);
 
-        try {
+        PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO statements(customer_id,customer_name,file_path) VALUES(?,?,?)",
+                Statement.RETURN_GENERATED_KEYS);
 
-            Connection conn = DBConnection.getConnection();
+        ps.setInt(1, customerId);
+        ps.setString(2, customerName);
+        ps.setString(3, filePath);
 
-            String sql = "SELECT * FROM statements WHERE id=?";
+        ps.executeUpdate();
 
-            PreparedStatement ps = conn.prepareStatement(sql);
+        ResultSet rs = ps.getGeneratedKeys();
+        rs.next();
 
-            ps.setInt(1, id);
-
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-
-                statement = new Statement();
-
-                statement.setId(rs.getInt("id"));
-                statement.setCustomerId(rs.getInt("customer_id"));
-                statement.setFilePath(rs.getString("file_path"));
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return statement;
+        return rs.getInt(1);
     }
 
-    // Get statements for a customer
-    public List<Statement> getStatementsByCustomer(int customerId) {
+    public static String getFile(int id) throws Exception {
 
-        List<Statement> statements = new ArrayList<>();
+        Connection conn = DriverManager.getConnection(DB);
 
-        try {
+        PreparedStatement ps = conn.prepareStatement(
+                "SELECT file_path FROM statements WHERE id=?");
 
-            Connection conn = DBConnection.getConnection();
+        ps.setInt(1, id);
 
-            String sql = "SELECT * FROM statements WHERE customer_id=?";
+        ResultSet rs = ps.executeQuery();
 
-            PreparedStatement ps = conn.prepareStatement(sql);
+        if(rs.next()) return rs.getString("file_path");
 
-            ps.setInt(1, customerId);
-
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-
-                Statement statement = new Statement();
-
-                statement.setId(rs.getInt("id"));
-                statement.setCustomerId(rs.getInt("customer_id"));
-                statement.setFilePath(rs.getString("file_path"));
-
-                statements.add(statement);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return statements;
-    }
-
-    // Delete statement
-    public void deleteStatement(int id) {
-
-        try {
-
-            Connection conn = DBConnection.getConnection();
-
-            String sql = "DELETE FROM statements WHERE id=?";
-
-            PreparedStatement ps = conn.prepareStatement(sql);
-
-            ps.setInt(1, id);
-
-            ps.executeUpdate();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        return null;
     }
 }
