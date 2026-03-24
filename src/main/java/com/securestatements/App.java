@@ -28,7 +28,11 @@ public class App
                     new ServletContextHandler(ServletContextHandler.SESSIONS);
 
             context.setContextPath("/");
-            context.setResourceBase("src/main/webapp");
+            context.setResourceBase(
+                    App.class.getClassLoader()
+                            .getResource("webapp")
+                            .toExternalForm()
+            );
 
             // ✅ THIS LINE FIXES YOUR ISSUE
             context.setWelcomeFiles(new String[]{"admin.html"});
