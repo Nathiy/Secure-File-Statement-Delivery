@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download Statement</title>
+</head>
+<body>
+
+<h2>Secure Statement Download</h2>
+
+<p id="status">Validating link...</p>
+
+<button id="downloadBtn" style="display:none;">Download Statement</button>
+
+<script>
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+
+    const status = document.getElementById("status");
+    const btn = document.getElementById("downloadBtn");
+
+    if (!token) {
+        status.textContent = "Invalid link.";
+    } else {
+        status.textContent = "Link ready. Click download.";
+        btn.style.display = "block";
+    }
+
+    btn.onclick = () => {
+        window.location = "/download?token=" + token;
+    };
+
+</script>
+
+</body>
+</html>
