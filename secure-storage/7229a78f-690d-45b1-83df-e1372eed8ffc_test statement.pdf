@@ -1,0 +1,16 @@
+CustomerID: 1
+Customer Name: John Doe
+Email: john@example.com
+
+Statement Period: Q1 2026
+Statement Date: March 12, 2026
+
+Account Summary:
+	Account Number: 123456789
+	Current Balance: $5,250.00
+	Available Credit: $4,750.00
+
+Recent Transactions:
+	Deposit: +$2,000.00 (Mar 1)
+	Payment: -$500.00 (Mar 5) 
+	Transfer: -$250.00 (Mar 10) 
