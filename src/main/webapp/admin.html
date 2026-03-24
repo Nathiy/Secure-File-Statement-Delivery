@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        .hidden { display: none; }
+        .section { margin-top: 20px; }
+        input, button { margin: 5px; padding: 8px; }
+    </style>
+</head>
+<body>
+
+<h2>Secure Statements - Admin</h2>
+
+<!-- LOGIN -->
+<div id="loginSection">
+    <h3>Admin Login</h3>
+    <input type="text" id="username" placeholder="Username"><br>
+    <input type="password" id="password" placeholder="Password"><br>
+    <button onclick="login()">Login</button>
+    <p id="loginStatus"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;">
+
+    <h3>Dashboard</h3>
+
+    <button onclick="showSection('uploadSection')">Upload Statement</button>
+    <button onclick="showSection('linkSection')">Generate Link</button>
+
+    <!-- Upload -->
+    <div id="uploadSection" style="display:none;">
+        <h4>Upload Statement</h4>
+
+        <form id="uploadForm">
+            <input type="text" name="customerId" placeholder="Customer ID" required><br>
+            <input type="file" name="file" required><br>
+            <button type="submit">Upload</button>
+        </form>
+
+        <p id="uploadResult"></p>
+    </div>
+
+    <!-- Generate Link -->
+    <div id="linkSection" style="display:none;">
+        <h4>Generate Download Link</h4>
+
+        <input type="text" id="statementId" placeholder="Statement ID"><br>
+        <button onclick="generateLink()">Generate Link</button>
+
+        <p id="linkOutput"></p>
+    </div>
+
+</div>
+
+<script>
+
+    window.onload = () => {
+    document.getElementById("dashboard").style.display = "none";
+    };
+
+    let loggedIn = false;
+
+    // Fake login (for now)
+    function login() {
+        const user = document.getElementById("username").value;
+        const pass = document.getElementById("password").value;
+
+        if (user === "admin" && pass === "admin") {
+            loggedIn = true;
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("dashboard").style.display = "block";
+        } else {
+            document.getElementById("loginStatus").textContent = "Invalid credentials";
+        }
+    }
+
+    // Show sections
+    function showSection(id) {
+    document.getElementById("uploadSection").style.display = "none";
+    document.getElementById("linkSection").style.display = "none";
+
+    document.getElementById(id).style.display = "block";
+    }
+
+    // Upload logic
+    document.getElementById("uploadForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        fetch("/admin/upload", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById("uploadResult").textContent = data;
+
+            // OPTIONAL: auto-extract statementId
+            const match = data.match(/Statement ID:\s*(\d+)/);
+            if (match) {
+                document.getElementById("statementId").value = match[1];
+            }
+        });
+    });
+
+    // Generate link
+    function generateLink() {
+        const id = document.getElementById("statementId").value;
+
+        fetch("/admin/generate-link", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: "statementId=" + id
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("linkOutput").innerHTML =
+                `<a href="${data.url}" target="_blank">${data.url}</a>`;
+        });
+    }
+
+</script>
+
+</body>
+</html>
